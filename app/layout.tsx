@@ -1,5 +1,5 @@
 // app/layout.tsx
-import { Providers } from '@/components/ui/providers';
+import { Providers } from '@/providers/providers';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
