@@ -3,7 +3,7 @@ import { jwtVerify, SignJWT } from 'jose';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { User, UserResponse } from '@/types/user';
+import { User, UserResponse, UserRole } from '@/types/user';
 
 const secretKey = new TextEncoder().encode(process.env.JWT_SECRET!);
 const tokenExpiration = '24h';
@@ -54,3 +54,24 @@ export function toUserResponse(user: User): UserResponse {
   };
 }
 
+// Additional utility functions
+export async function validateUserSession(token?: string): Promise<User | null> {
+  if (!token) return null;
+  return await getUserFromToken(token);
+}
+
+export async function refreshToken(user: User): Promise<string> {
+  return generateToken(user);
+}
+
+export function hasPermission(user: User | null, requiredRole: UserRole): boolean {
+  if (!user) return false;
+  
+  const roleHierarchy: Record<UserRole, number> = {
+    'SUPER_ADMIN': 3,
+    'ADMIN': 2,
+    'STAFF': 1
+  };
+
+  return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
+}

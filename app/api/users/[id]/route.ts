@@ -3,34 +3,31 @@ import { db } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { toUserResponse } from '@/lib/auth';
-import { UpdateUserInput, UserResponse } from '@/types/user';
+import { UpdateUserInput } from '@/types/user';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-option';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+interface RouteParams {
+  params: Promise<{ id: string }>;
+}
+
+export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const [user] = await db.select().from(users).where(eq(users.id, params.id));
-    if (!user) {
+    // First get the session
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.role || 
+        (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'ADMIN')) {
       return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
+        { error: 'Unauthorized' },
+        { status: 403 }
       );
     }
 
-    return NextResponse.json(toUserResponse(user));
-  } catch (error) {
-    console.error('Get user error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+    // Await params to get the id
+    const { id: userId } = await params;
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
-  try {
-    const { name, email, role, isSuspended } = (await request.json()) as UpdateUserInput;
-
-    // Check if user exists
-    const [existingUser] = await db.select().from(users).where(eq(users.id, params.id));
+    const [existingUser] = await db.select().from(users).where(eq(users.id, userId));
     if (!existingUser) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -38,7 +35,16 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       );
     }
 
-    // Check if email is being changed to an existing one
+    const { name, email, role, isSuspended } = (await request.json()) as UpdateUserInput;
+
+    // Only super-admins can change roles
+    if (role && session.user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Only super-admins can change user roles' },
+        { status: 403 }
+      );
+    }
+
     if (email && email !== existingUser.email) {
       const [userWithEmail] = await db.select().from(users).where(eq(users.email, email));
       if (userWithEmail) {
@@ -49,7 +55,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       }
     }
 
-    // Update user
     const [updatedUser] = await db.update(users)
       .set({
         name: name ?? existingUser.name,
@@ -58,7 +63,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         isSuspended: isSuspended ?? existingUser.isSuspended,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, params.id))
+      .where(eq(users.id, userId))
       .returning();
 
     return NextResponse.json(toUserResponse(updatedUser));
@@ -71,9 +76,19 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const [existingUser] = await db.select().from(users).where(eq(users.id, params.id));
+    const session = await getServerSession(authOptions);
+    const { id: userId } = await params;
+
+    if (session?.user?.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Unauthorized - Only super-admins can delete users' },
+        { status: 403 }
+      );
+    }
+
+    const [existingUser] = await db.select().from(users).where(eq(users.id, userId));
     if (!existingUser) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -81,7 +96,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       );
     }
 
-    await db.delete(users).where(eq(users.id, params.id));
+    await db.delete(users).where(eq(users.id, userId));
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

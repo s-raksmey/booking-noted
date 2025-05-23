@@ -5,16 +5,31 @@ import { eq, and } from 'drizzle-orm';
 import { hashPassword, toUserResponse } from '@/lib/auth';
 import { CreateUserInput, UserRole } from '@/types/user';
 import type { SQL } from 'drizzle-orm';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-option';
 
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.role || 
+        (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'ADMIN')) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      );
+    }
+
+    const whereClauses: SQL[] = [];
+    
+    if (session.user.role === 'ADMIN') {
+      whereClauses.push(eq(users.role, 'STAFF'));
+    }
+
     const { searchParams } = new URL(request.url);
     const role = searchParams.get('role');
     const isSuspended = searchParams.get('isSuspended');
 
-    // Initialize with proper typing
-    const whereClauses: SQL[] = [];
-    
     if (role) {
       whereClauses.push(eq(users.role, role as UserRole));
     }
@@ -24,7 +39,6 @@ export async function GET(request: Request) {
       whereClauses.push(eq(users.isSuspended, suspended));
     }
 
-    // Build the final query
     const query = db.select()
       .from(users)
       .where(whereClauses.length > 0 ? and(...whereClauses) : undefined);
@@ -42,12 +56,26 @@ export async function GET(request: Request) {
   }
 }
 
-// app/api/users/route.ts
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    
+    if (session?.user?.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Unauthorized - Only super-admins can create users' },
+        { status: 403 }
+      );
+    }
+
     const { name, email, role, password } = (await request.json()) as CreateUserInput;
 
-    // Check if user exists
+    if (!['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(role)) {
+      return NextResponse.json(
+        { error: 'Invalid role specified' },
+        { status: 400 }
+      );
+    }
+
     const [existingUser] = await db.select()
       .from(users)
       .where(eq(users.email, email));
@@ -59,10 +87,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Set default password based on role
     let finalPassword = password;
-    if (!password && (role === 'ADMIN' || role === 'STAFF')) {
-      finalPassword = '123'; // Default password for admin and staff
+    if (!password) {
+      switch (role) {
+        case 'SUPER_ADMIN':
+          finalPassword = 'superadmin123';
+          break;
+        case 'ADMIN':
+          finalPassword = 'admin123';
+          break;
+        case 'STAFF':
+          finalPassword = 'staff123';
+          break;
+      }
     }
 
     if (!finalPassword) {
@@ -72,10 +109,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Hash password
     const passwordHash = await hashPassword(finalPassword);
 
-    // Create user
     const [newUser] = await db.insert(users)
       .values({
         id: crypto.randomUUID(),

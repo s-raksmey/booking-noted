@@ -16,7 +16,7 @@ export default function LoginModal({ show, onClose }: { show: boolean; onClose: 
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/super-admin'; // Changed default to super-admin
+  const callbackUrl = searchParams.get('callbackUrl') || '/super-admin';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,20 +42,11 @@ export default function LoginModal({ show, onClose }: { show: boolean; onClose: 
       }
 
       // Success handling
-      toast.success('Login successful! Redirecting...', { id: 'login' });
+      toast.success('Login successful!', { id: 'login' });
       
-      // Refresh to ensure session is properly set
-      router.refresh();
-      
-      // Redirect after a brief delay
-      setTimeout(() => {
-        if (result?.url) {
-          router.push(result.url);
-        } else {
-          router.push('/super-admin');
-        }
-        onClose();
-      }, 1000);
+      // Force a complete refresh to ensure all components get the updated session
+      // This is crucial for the header to update properly
+      window.location.href = result?.url || '/super-admin';
       
     } catch (error) {
       console.error('Login error:', error);
@@ -106,7 +97,7 @@ export default function LoginModal({ show, onClose }: { show: boolean; onClose: 
                   </div>
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-                <p className="text-gray-500 mt-1">Sign in to your account</p>
+                <p className="text-gray-500 mt-1">Sign in to your admin account</p>
               </div>
 
               <form onSubmit={handleLogin} className="space-y-6">
