@@ -8,7 +8,7 @@ import { useSessionStatus } from '@/hooks/session-status';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { LogOut } from 'lucide-react';
-import { LogoutConfirmationDialog } from '@/components/confirm-message';
+import { LogoutConfirmationDialog } from '@/components/ui/confirm-message';
 
 export default function Header() {
   const [showLogin, setShowLogin] = useState(false);

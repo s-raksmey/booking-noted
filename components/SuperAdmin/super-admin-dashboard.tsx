@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { UsersTable } from './users-table';
 import { RoomsTable } from './rooms-table';
@@ -8,15 +9,16 @@ import { BookingsTable } from './bookings-table';
 import { SystemConfigForm } from './system-config-form';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
-import { LogOut, Loader2, UserCog, Hotel, CalendarCheck, Settings, LayoutDashboard, Menu, X, Moon, Sun } from 'lucide-react';
+import { LogOut, Loader2, Hotel, CalendarCheck, Settings, LayoutDashboard, Menu, X, Moon, Sun, ArrowLeft, Home, UserCog } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { LogoutConfirmationDialog } from '../confirm-message';
+import { LogoutConfirmationDialog } from '../ui/confirm-message';
 
 export function SuperAdminDashboard() {
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [navigationHistory, setNavigationHistory] = useState<string[]>(['dashboard']);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [theme, setTheme] = useState('light');
@@ -28,6 +30,17 @@ export function SuperAdminDashboard() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
+
+  // Update navigation history when switching sections
+  useEffect(() => {
+    setNavigationHistory(prev => {
+      const newHistory = [...prev];
+      if (newHistory[newHistory.length - 1] !== activeSection) {
+        newHistory.push(activeSection);
+      }
+      return newHistory;
+    });
+  }, [activeSection]);
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
@@ -47,6 +60,24 @@ export function SuperAdminDashboard() {
       setIsLoggingOut(false);
       setLogoutDialogOpen(false);
     }
+  };
+
+  const handleBack = () => {
+    setNavigationHistory(prev => {
+      if (prev.length <= 1) {
+        setActiveSection('dashboard');
+        return ['dashboard'];
+      }
+      const newHistory = prev.slice(0, -1);
+      setActiveSection(newHistory[newHistory.length - 1]);
+      return newHistory;
+    });
+  };
+
+  const handleBackToHome = () => {
+    router.push('/');
+    router.refresh();
+    setMobileNavOpen(false);
   };
 
   if (status === 'loading') {
@@ -155,9 +186,15 @@ export function SuperAdminDashboard() {
         <div className="flex flex-col h-full p-4">
           <div className="flex items-center gap-3 p-4 mb-6">
             <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg">
-              <UserCog className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <Home className="h-6 w-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-200">Admin Console</h1>
+            <Button
+              variant="ghost"
+              className="text-gray-800 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900"
+              onClick={handleBackToHome}
+            >
+              Back to Home
+            </Button>
           </div>
 
           <nav className="flex-1">
@@ -199,9 +236,27 @@ export function SuperAdminDashboard() {
       <main className="flex-1 md:ml-64 overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-              {navItems.find(item => item.id === activeSection)?.label}
-            </h2>
+            <div className="flex items-center gap-4">
+              {activeSection !== 'dashboard' && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleBack}
+                    className="border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900 transition-all duration-200"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                </motion.div>
+              )}
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                {navItems.find(item => item.id === activeSection)?.label}
+              </h2>
+            </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
