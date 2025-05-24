@@ -1,7 +1,7 @@
-import Header from '@/components/HomePage/Header';
-import HeroSection from '@/components/HomePage/HeroSection';
-import FeaturesSection from '@/components/HomePage/FeaturesSection';
-import Footer from '@/components/HomePage/Footer';
+import Header from '@/components/homePage/Header';
+import HeroSection from '@/components/homePage/HeroSection';
+import FeaturesSection from '@/components/homePage/FeaturesSection';
+import Footer from '@/components/homePage/Footer';
 
 export default function HomePage() {
   return (

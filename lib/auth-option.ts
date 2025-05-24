@@ -1,4 +1,3 @@
-// lib/auth-option.ts
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { db } from '@/db';
@@ -32,13 +31,11 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          // Return the user object in the shape expected by NextAuth
           return {
             id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
-            // Add these to match the User interface
             passwordHash: user.passwordHash,
             isSuspended: user.isSuspended,
           };

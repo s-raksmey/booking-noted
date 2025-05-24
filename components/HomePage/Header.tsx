@@ -1,30 +1,29 @@
 'use client';
 
-import { Calendar } from 'lucide-react';
+import { Calendar, Home, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LoginModal from '@/app/(protected)/login/page';
 import { useState } from 'react';
 import { useSessionStatus } from '@/hooks/session-status';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { LogOut } from 'lucide-react';
 import { LogoutConfirmationDialog } from '@/components/ui/confirm-message';
 
 export default function Header() {
   const [showLogin, setShowLogin] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const { isLoggedIn } = useSessionStatus();
+  const { isLoggedIn, userRole } = useSessionStatus(); // Changed from role to userRole
   const router = useRouter();
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
       await signOut({ redirect: false });
-      router.refresh(); // Refresh to update the session state
+      router.refresh();
     } finally {
       setIsSigningOut(false);
-      setShowLogoutConfirm(false); // Close the dialog
+      setShowLogoutConfirm(false);
     }
   };
 
@@ -38,13 +37,36 @@ export default function Header() {
         <div className="flex items-center mx-4 gap-2">
           {isLoggedIn ? (
             <>
-              <Button
-                onClick={() => router.push('/super-admin')}
-                variant="outline"
-                className="text-blue-600 border-blue-600 hover:bg-blue-50"
-              >
-                Dashboard
-              </Button>
+              {userRole === 'SUPER_ADMIN' && ( // Changed to userRole
+                <Button
+                  onClick={() => router.push('/super-admin')}
+                  variant="outline"
+                  className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                >
+                  <Home className="h-4 w-4 mr-2" />
+                  Super Admin Dashboard
+                </Button>
+              )}
+              {userRole === 'ADMIN' && ( // Changed to userRole
+                <Button
+                  onClick={() => router.push('/admin')}
+                  variant="outline"
+                  className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                >
+                  <Home className="h-4 w-4 mr-2" />
+                  Admin Dashboard
+                </Button>
+              )}
+              {userRole === 'STAFF' && ( // Changed to userRole
+                <Button
+                  onClick={() => router.push('/staff')}
+                  variant="outline"
+                  className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                >
+                  <Home className="h-4 w-4 mr-2" />
+                  Staff Dashboard
+                </Button>
+              )}
               <Button
                 onClick={() => setShowLogoutConfirm(true)}
                 variant="outline"
@@ -65,10 +87,7 @@ export default function Header() {
         </div>
       </nav>
 
-      {/* Login Modal */}
       <LoginModal show={showLogin} onClose={() => setShowLogin(false)} />
-
-      {/* Logout Confirmation Dialog */}
       <LogoutConfirmationDialog
         open={showLogoutConfirm}
         onOpenChange={setShowLogoutConfirm}

@@ -23,7 +23,7 @@ async function createSuperAdmin() {
     const superAdmin = {
       name: 'Super Admin',
       email: 'superadmin@example.com',
-      password: 'SecurePassword123!', // Change this in production!
+      password: '1234', // Change this in production!
       role: 'SUPER_ADMIN' as const,
     };
 

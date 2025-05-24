@@ -5,27 +5,35 @@ import { NextResponse } from 'next/server';
 export default withAuth({
   callbacks: {
     authorized({ req, token }) {
-      // Allow access to auth routes
-      if (req.nextUrl.pathname.startsWith('/api/auth')) {
-        return true;
-      }
-
+      // Public routes
+      if (req.nextUrl.pathname.startsWith('/login')) return true;
+      
+      // Role-based authorization
       if (req.nextUrl.pathname.startsWith('/super-admin')) {
         return token?.role === 'SUPER_ADMIN';
       }
+      if (req.nextUrl.pathname.startsWith('/admin')) {
+        return token?.role === 'ADMIN';
+      }
+      if (req.nextUrl.pathname.startsWith('/staff')) {
+        return token?.role === 'STAFF';
+      }
       
+      // Default protected route
       return !!token;
     },
   },
   pages: {
     signIn: '/login',
-    error: '/login',
+    error: '/unauthorized',
   }
 });
 
 export const config = { 
   matcher: [
     '/super-admin/:path*',
-    // Add other protected paths here
+    '/admin/:path*',
+    '/staff/:path*',
+    '/dashboard',
   ] 
 };

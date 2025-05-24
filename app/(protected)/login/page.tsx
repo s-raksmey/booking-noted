@@ -16,48 +16,58 @@ export default function LoginModal({ show, onClose }: { show: boolean; onClose: 
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/super-admin';
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // components/login-modal.tsx
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!email || !password) {
+    toast.error('Please fill in all fields');
+    return;
+  }
+
+  setIsLoading(true);
+  toast.loading('Signing in...', { id: 'login' });
+
+  try {
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      throw new Error(result.error);
+    }
+
+    // Get the user's role from the session
+    const response = await fetch('/api/auth/session');
+    const session = await response.json();
+    const userRole = session.user?.role;
+
+    let redirectPath = '/dashboard'; // Default fallback
+    if (userRole === 'SUPER_ADMIN') {
+      redirectPath = '/super-admin';
+    } else if (userRole === 'ADMIN') {
+      redirectPath = '/admin';
+    } else if (userRole === 'STAFF') {
+      redirectPath = '/staff';
+    }
+
+    toast.success('Login successful!', { id: 'login' });
+    window.location.href = redirectPath;
     
-    if (!email || !password) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-
-    setIsLoading(true);
-    toast.loading('Signing in...', { id: 'login' });
-
-    try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-        callbackUrl,
-      });
-
-      if (result?.error) {
-        throw new Error(result.error);
-      }
-
-      // Success handling
-      toast.success('Login successful!', { id: 'login' });
-      
-      // Force a complete refresh to ensure all components get the updated session
-      // This is crucial for the header to update properly
-      window.location.href = result?.url || '/super-admin';
-      
-    } catch (error) {
-      console.error('Login error:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Login failed',
-        { id: 'login' }
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  } catch (error) {
+    console.error('Login error:', error);
+    toast.error(
+      error instanceof Error ? error.message : 'Login failed',
+      { id: 'login' }
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <AnimatePresence>
@@ -68,7 +78,6 @@ export default function LoginModal({ show, onClose }: { show: boolean; onClose: 
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex items-center justify-center"
         >
-          {/* Background overlay */}
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
           
           <motion.div
@@ -80,7 +89,6 @@ export default function LoginModal({ show, onClose }: { show: boolean; onClose: 
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative overflow-hidden rounded-2xl bg-white shadow-2xl p-8">
-              {/* Close button */}
               <button
                 onClick={onClose}
                 className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 transition-colors"
@@ -89,7 +97,6 @@ export default function LoginModal({ show, onClose }: { show: boolean; onClose: 
                 <X className="h-5 w-5 text-gray-500" />
               </button>
 
-              {/* Content */}
               <div className="flex flex-col items-center mb-8">
                 <div className="mb-4 p-3 bg-blue-100/20 rounded-full">
                   <div className="p-3 bg-blue-100 rounded-full">
@@ -97,7 +104,7 @@ export default function LoginModal({ show, onClose }: { show: boolean; onClose: 
                   </div>
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-                <p className="text-gray-500 mt-1">Sign in to your admin account</p>
+                <p className="text-gray-500 mt-1">Sign in to your account</p>
               </div>
 
               <form onSubmit={handleLogin} className="space-y-6">
