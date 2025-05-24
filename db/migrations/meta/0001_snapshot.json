@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "dc351ee3-4d7b-4ec2-ad3f-0304ebcede2d",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "f4314ba5-37f4-42c7-912e-d1a5444c1ba5",
+  "prevId": "dc351ee3-4d7b-4ec2-ad3f-0304ebcede2d",
   "tables": {
     "bookings": {
       "name": "bookings",
@@ -76,22 +76,22 @@
         }
       },
       "indexes": {
-        "room_idx": {
-          "name": "room_idx",
+        "booking_room_idx": {
+          "name": "booking_room_idx",
           "columns": [
             "room_id"
           ],
           "isUnique": false
         },
-        "bookings_user_idx": {
-          "name": "bookings_user_idx",
+        "booking_user_idx": {
+          "name": "booking_user_idx",
           "columns": [
             "user_id"
           ],
           "isUnique": false
         },
-        "status_idx": {
-          "name": "status_idx",
+        "booking_status_idx": {
+          "name": "booking_status_idx",
           "columns": [
             "status"
           ],
@@ -291,8 +291,8 @@
         }
       },
       "indexes": {
-        "name_idx": {
-          "name": "name_idx",
+        "room_name_idx": {
+          "name": "room_name_idx",
           "columns": [
             "name"
           ],

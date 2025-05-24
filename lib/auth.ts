@@ -54,7 +54,6 @@ export function toUserResponse(user: User): UserResponse {
   };
 }
 
-// Additional utility functions
 export async function validateUserSession(token?: string): Promise<User | null> {
   if (!token) return null;
   return await getUserFromToken(token);

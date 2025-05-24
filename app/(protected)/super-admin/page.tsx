@@ -1,5 +1,5 @@
 // app/super-admin/page.tsx
-import { SuperAdminDashboard } from '@/components/SuperAdmin/super-admin-dashboard';
+import { SuperAdminDashboard } from '@/components/superAdmin/super-admin-dashboard';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-option';
 import { redirect } from 'next/navigation';

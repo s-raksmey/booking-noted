@@ -9,4 +9,9 @@ export interface Room {
   createdAt: string;
   updatedAt: string;
   createdBy: string; // User ID
+  location: string;
+  features: string; // JSON string
+  autoApprove: boolean;
+  restrictedHours?: string;
+  suspendedUntil?: number; // UNIX timestamp
 }
